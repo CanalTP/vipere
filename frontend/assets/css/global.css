@@ -1,0 +1,122 @@
+body {font-size: 12px;
+    font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+}
+ul.title {
+    padding:0;
+    margin:0;
+    list-style-type:none;
+}
+li.title {
+    margin-left:2px;
+    float:left; /*pour IE*/
+}
+ul.title li.title a.title {
+    display:block;
+    float:left;
+    width:100px;
+    #background-color:#6495ED;
+    background-color:#FFFFFF;
+    color:black;
+    text-decoration:none;
+    text-align:center;
+    padding:5px;
+    border:2px solid;
+    /*pour avoir un effet "outset" avec IE :*/
+    border-color:#DCDCDC #696969 #696969 #DCDCDC;
+}
+ul li a:hover {
+    background-color:#D3D3D3;
+    border-color:#696969 #DCDCDC #DCDCDC #696969;
+}
+
+.icon-ligne
+{
+    display: inline-block;
+    padding-top: 2px;
+    padding-right: 2px;
+    padding-bottom: 2px;
+    padding-left: 2px;
+    background-color: #323a45;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.span_link {    
+    color: blue;
+    text-decoration:underline;
+    cursor: pointer;
+}
+
+/*styles pour la page journeys*/
+.journey {
+    border-style:solid;
+    border-width:2px;
+    margin-bottom:10px;
+}
+.section{
+    border-style:dotted;
+    border-width:1px;
+}
+
+.footer{
+    text-align : center;
+    font-size: 14px;
+}
+h2{
+    text-align : center;
+    font-size: 14px;
+}
+h1{
+    text-align : center;
+}
+
+/*style pour virer les tableaux */
+section {
+    display: inline-block;
+    vertical-align: top;
+    width : 49%;
+    margin : auto;
+}
+
+section.first_half {
+    min-width: 500px;
+    max-height : 500px;
+    overflow-y: scroll;
+    border-style: solid;
+    border-width: 0px;
+}
+section.second_half {
+    min-width: 500px;
+    max-height : 500px;
+    padding-left: 2px;
+}
+ 
+ 
+.map-canvas {
+    height : 100%;
+    width: 100%;
+    max-height : 500px;
+}
+.item{
+    padding:5px;
+    font-size: 12px;
+    border-width: 1px;
+    border-style: none none solid none;
+}
+
+.item .title {
+    display:block;
+    color: #EA6612  ;
+    font-weight:700;
+}
+.item .id {
+    color: #888888  ;
+    font-weight:600;
+}
+.item .title small { font-weight:400; }
+.item.active .title,
+.item .title:hover { color:#BAB431; }
+.item .active {
+background-color:#f8f8f8;
+}

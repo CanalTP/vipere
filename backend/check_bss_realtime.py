@@ -44,7 +44,7 @@ def test_all_bss_for_realtime_on_stands(environnement, coverage, *insee_filter):
         if (total_nb_tests % 100) == 0:
             logger.info("Verification du VLS {} sur {}".format(str(total_nb_tests), str(len(pois))))
         total_nb_tests += 1
-        if insee_filter != []:
+        if insee_filter:
             if a_poi['administrative_regions'][0]['insee'] not in insee_filter :
                 test_result['POI hors périmètre'] += 1
                 continue

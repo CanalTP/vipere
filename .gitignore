@@ -1,3 +1,4 @@
-frontend/results/
+frontend/results/*.csv
+frontend/results/*.json
 params.json
 */__pycache__/*

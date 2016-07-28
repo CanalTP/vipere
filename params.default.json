@@ -1,0 +1,33 @@
+{
+    "tests" : {
+        "check_stop_basics": [
+            "a_coverage_id"
+        ],
+        "check_realtime_proxy": {
+            "a_coverage_id" : "a_network_id",
+        },
+        "check_line_colors": [
+            "a_coverage_id",
+            "another_coverage_id"
+        ],
+        "check_line_name_and_code": [
+            "a_coverage_id"
+        ],
+        "check_bss_realtime": {
+            "a_coverage_id" : ["insee_code_0", "insee_code_1", "insee_code_2", "insee_code_you_get_the_point"],
+            "another_coverage_id" : [],
+        }
+    },
+    "environnements": {
+        "prod": {
+            "url" : "http://api.navitia.io/v1/",
+            "key" : "get-your-own-token-at-auth.navitia.io",
+            "tyr": ""
+        },
+        "local": {
+            "url" : "http://localhost/your-navitia/v1/",
+            "key" : "your-own-token",
+            "tyr": "http://localhost/your-tyr/v0/"
+        }
+    }
+}

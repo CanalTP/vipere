@@ -27,6 +27,9 @@ Le lancement de tous les tests sur un des endpoints se fait via la commande
 Les autres scripts sont lancés avec toujours au moins 2 paramètres
 `python3 [script.py] [endpoint_name] [coverage]`
 
+exemple :
+`python3 check_bss_realtime.py customer fr-nw 45147 45234 45286`
+
 
 ## Fichiers de résutats
 Chaque test écrit un fichier CSV par coverage selon la structure suivante :

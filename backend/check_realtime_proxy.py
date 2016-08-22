@@ -42,8 +42,7 @@ def test_network_for_realtime_on_stop_schedule(environnement, coverage, *network
         appel_nav = requests.get(navitia_url + "coverage/{}/networks/{}/lines?count={}".format(coverage, network, nb_result), headers={'Authorization': navitia_api_key})
         lines = appel_nav.json()['lines']
         for a_line in lines :
-            if (len(lines) < 10) or (len(lines)%10 == 0):
-                logger.info("Execution du traitement sur le réseau {} et la ligne {}".format(network, a_line["id"]))
+            logger.info("Execution du traitement sur le réseau {} et la ligne {}".format(network, a_line["id"]))
             if not "properties" in a_line :
                 message = 'pas de configuration temps réel pour la ligne {} ({})'.format(a_line['name'], a_line['id'])
                 result = [coverage, environnement, datetime.date.today().strftime('%Y%m%d'), a_line['id'], "line", "temps réel mode proxy", "config manquante", message, "green", utils.geojson_to_wkt(a_line['geojson'])  ]
@@ -59,13 +58,14 @@ def test_network_for_realtime_on_stop_schedule(environnement, coverage, *network
                     continue
 
                 #je récupère le nombre de stop_points sur ma ligne
-                appel_nav = requests.get(navitia_url + "coverage/{}/networks/{}/lines/{}/stop_points?count=0".format(coverage, network, a_line['id']), headers={'Authorization': navitia_api_key})
+                appel_nav = requests.get(navitia_url + "coverage/{}/networks/{}/lines/{}/stop_points?count=200".format(coverage, network, a_line['id']), headers={'Authorization': navitia_api_key})
                 nb_result = appel_nav.json()['pagination']['total_result']
                 total_nb_tests += nb_result
 
-                #je fais un appel grille horaire à l'arrêt pour la ligne et je vérifie que j'ai du temps réel
-                appel_nav = requests.get(navitia_url + "coverage/{}/networks/{}/lines/{}/stop_schedules?count={}&items_per_schedule=1".format(coverage, network, a_line['id'], nb_result), headers={'Authorization': navitia_api_key})
-                for a_schedule in appel_nav.json()['stop_schedules'] :
+                #je fais un appel grille horaire à l'arrêt pour chaque arrêt de la ligne et je vérifie que j'ai du temps réel
+                for a_stop_point in appel_nav.json()['stop_points']:
+                    appel_nav = requests.get(navitia_url + "coverage/{}/networks/{}/lines/{}/stop_points/{}/stop_schedules?items_per_schedule=1".format(coverage, network, a_line['id'], a_stop_point['id']), headers={'Authorization': navitia_api_key})
+                    a_schedule = appel_nav.json()['stop_schedules'][0]
                     wkt = "POINT({} {})".format(a_schedule['stop_point']["coord"]["lon"], a_schedule['stop_point']["coord"]["lat"])
                     if len(a_schedule['date_times']) == 0 :
                         if a_schedule['additional_informations'] in ["no_departure_this_day", "partial_terminus", "terminus"] :
@@ -96,7 +96,7 @@ def test_network_for_realtime_on_stop_schedule(environnement, coverage, *network
                         else:
                             test_result['OK'] += 1
 
-        logger.info ("Résultat des tests pour le réseau {} ".format(network))
+        logger.info ("Résultat des tests pour le réseau {} : ".format(network))
         logger.info (">> {} cas de tests".format(total_nb_tests))
         logger.info (">> {} ligne(s) sans temps réel configuré".format(test_result['ligne non configurée']))
         logger.info (">> {} cas de services terminés".format(test_result["pas horaires mais c'est normal"]))

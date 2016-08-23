@@ -59,42 +59,41 @@ def test_network_for_realtime_on_stop_schedule(environnement, coverage, *network
 
                 #je récupère le nombre de stop_points sur ma ligne
                 appel_nav = requests.get(navitia_url + "coverage/{}/networks/{}/lines/{}/stop_points?count=200".format(coverage, network, a_line['id']), headers={'Authorization': navitia_api_key})
-                nb_result = appel_nav.json()['pagination']['total_result']
-                total_nb_tests += nb_result
 
                 #je fais un appel grille horaire à l'arrêt pour chaque arrêt de la ligne et je vérifie que j'ai du temps réel
                 for a_stop_point in appel_nav.json()['stop_points']:
                     appel_nav = requests.get(navitia_url + "coverage/{}/networks/{}/lines/{}/stop_points/{}/stop_schedules?items_per_schedule=1".format(coverage, network, a_line['id'], a_stop_point['id']), headers={'Authorization': navitia_api_key})
-                    a_schedule = appel_nav.json()['stop_schedules'][0]
-                    wkt = "POINT({} {})".format(a_schedule['stop_point']["coord"]["lon"], a_schedule['stop_point']["coord"]["lat"])
-                    if len(a_schedule['date_times']) == 0 :
-                        if a_schedule['additional_informations'] in ["no_departure_this_day", "partial_terminus", "terminus"] :
-                            test_result["pas horaires mais c'est normal"] += 1
-                            message = "pas d'horaires aujourd'hui pour l'arrêt {}, la ligne {}, le parcours {} ({}, {}, {})".format(a_schedule['stop_point']['name'], a_schedule['route']['line']['code'],  a_schedule['route']['name'], a_schedule['stop_point']['id'], a_schedule['route']['line']['id'],  a_schedule['route']['id'])
-                            result = [coverage, environnement, datetime.date.today().strftime('%Y%m%d')
-                                , a_schedule['stop_point']['id'], "stop_point", "temps réel mode proxy", "pas d'horaires aujourd'hui"
-                                , message
-                                , "green", wkt  ]
-                            detail_test_result.append(result)
+                    for a_schedule in appel_nav.json()['stop_schedules'] :
+                        wkt = "POINT({} {})".format(a_schedule['stop_point']["coord"]["lon"], a_schedule['stop_point']["coord"]["lat"])
+                        total_nb_tests +=1
+                        if len(a_schedule['date_times']) == 0 :
+                            if a_schedule['additional_informations'] in ["no_departure_this_day", "partial_terminus", "terminus"] :
+                                test_result["pas horaires mais c'est normal"] += 1
+                                message = "pas d'horaires aujourd'hui pour l'arrêt {}, la ligne {}, le parcours {} ({}, {}, {})".format(a_schedule['stop_point']['name'], a_schedule['route']['line']['code'],  a_schedule['route']['name'], a_schedule['stop_point']['id'], a_schedule['route']['line']['id'],  a_schedule['route']['id'])
+                                result = [coverage, environnement, datetime.date.today().strftime('%Y%m%d')
+                                    , a_schedule['stop_point']['id'], "stop_point", "temps réel mode proxy", "pas d'horaires aujourd'hui"
+                                    , message
+                                    , "green", wkt  ]
+                                detail_test_result.append(result)
+                            else :
+                                message = "pas d'horaires pour l'arrêt {}, la ligne {}, le parcours {} ({}, {}, {})".format(a_schedule['stop_point']['name'], a_schedule['route']['line']['code'],  a_schedule['route']['name'], a_schedule['stop_point']['id'], a_schedule['route']['line']['id'],  a_schedule['route']['id'])
+                                result = [coverage, environnement, datetime.date.today().strftime('%Y%m%d')
+                                    , a_schedule['stop_point']['id'], "stop_point", "temps réel mode proxy", "pas d'horaires"
+                                    , message
+                                    , "red", wkt  ]
+                                detail_test_result.append(result)
+                                test_result['pas horaires du tout'] += 1
                         else :
-                            message = "pas d'horaires pour l'arrêt {}, la ligne {}, le parcours {} ({}, {}, {})".format(a_schedule['stop_point']['name'], a_schedule['route']['line']['code'],  a_schedule['route']['name'], a_schedule['stop_point']['id'], a_schedule['route']['line']['id'],  a_schedule['route']['id'])
-                            result = [coverage, environnement, datetime.date.today().strftime('%Y%m%d')
-                                , a_schedule['stop_point']['id'], "stop_point", "temps réel mode proxy", "pas d'horaires"
-                                , message
-                                , "red", wkt  ]
-                            detail_test_result.append(result)
-                            test_result['pas horaires du tout'] += 1
-                    else :
-                        if a_schedule['date_times'][0]['data_freshness'] != "realtime":
-                            test_result['horaires théoriques'] += 1
-                            message = "pas de temps réel pour l'arrêt {}, la ligne {}, le parcours {} ({}, {}, {})".format(a_schedule['stop_point']['name'], a_schedule['route']['line']['code'],  a_schedule['route']['name'], a_schedule['stop_point']['id'], a_schedule['route']['line']['id'],  a_schedule['route']['id'])
-                            result = [coverage, environnement, datetime.date.today().strftime('%Y%m%d')
-                                , a_schedule['stop_point']['id'], "stop_point", "temps réel mode proxy", "horaires théoriques"
-                                , message
-                                , "orange", wkt  ]
-                            detail_test_result.append(result)
-                        else:
-                            test_result['OK'] += 1
+                            if a_schedule['date_times'][0]['data_freshness'] != "realtime":
+                                test_result['horaires théoriques'] += 1
+                                message = "pas de temps réel pour l'arrêt {}, la ligne {}, le parcours {} ({}, {}, {})".format(a_schedule['stop_point']['name'], a_schedule['route']['line']['code'],  a_schedule['route']['name'], a_schedule['stop_point']['id'], a_schedule['route']['line']['id'],  a_schedule['route']['id'])
+                                result = [coverage, environnement, datetime.date.today().strftime('%Y%m%d')
+                                    , a_schedule['stop_point']['id'], "stop_point", "temps réel mode proxy", "horaires théoriques"
+                                    , message
+                                    , "orange", wkt  ]
+                                detail_test_result.append(result)
+                            else:
+                                test_result['OK'] += 1
 
         logger.info ("Résultat des tests pour le réseau {} : ".format(network))
         logger.info (">> {} cas de tests".format(total_nb_tests))

@@ -31,6 +31,7 @@ def test_network_for_realtime_on_stop_schedule(environnement, coverage, *network
     test_result["pas horaires mais c'est normal"] = 0
     test_result['horaires théoriques'] = 0
     test_result['OK'] = 0
+    test_result['non testé'] = 0
 
     detail_test_result =  []
     detail_test_result.append(["coverage", "env", "test_datetime", "object_id", "object_type", "test_category", "error", "infos", "error_level", "wkt"])
@@ -59,6 +60,12 @@ def test_network_for_realtime_on_stop_schedule(environnement, coverage, *network
 
                 #je récupère le nombre de stop_points sur ma ligne
                 appel_nav = requests.get(navitia_url + "coverage/{}/networks/{}/lines/{}/stop_points?count=200".format(coverage, network, a_line['id']), headers={'Authorization': navitia_api_key})
+                if appel_nav.json()['pagination']['total_result'] > 200 :
+                    test_result['non testé'] += appel_nav.json()['pagination']['total_result'] - 200
+                    message = "Toute la ligne {} ({}) n'a pas été testée car elle a trop d'arrêts".format(a_line['name'], a_line['id'])
+                    result = [coverage, environnement, datetime.date.today().strftime('%Y%m%d'), a_line['id'], "line", "temps réel mode proxy", "évo du script à prévoir", message, "red", utils.geojson_to_wkt(a_line['geojson'])  ]
+                    detail_test_result.append(result)
+                    logger.error(message)
 
                 #je fais un appel grille horaire à l'arrêt pour chaque arrêt de la ligne et je vérifie que j'ai du temps réel
                 for a_stop_point in appel_nav.json()['stop_points']:
@@ -102,6 +109,7 @@ def test_network_for_realtime_on_stop_schedule(environnement, coverage, *network
         logger.info (">> {} cas où du théorique est renvoyé".format(test_result['horaires théoriques']))
         logger.info (">> {} cas où aucun horaire n'est renvoyé".format(test_result['pas horaires du tout']))
         logger.info (">> {} cas où ça marche !".format(test_result['OK']))
+        logger.info (">> au moins {} cas non testés ".format(test_result['non testé']))
 
     utils.write_errors_to_file (environnement, coverage, "check_realtime_proxy", detail_test_result)
     utils.generate_file_summary()

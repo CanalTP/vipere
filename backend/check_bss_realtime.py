@@ -27,6 +27,7 @@ def test_all_bss_for_realtime_on_stands(environnement, coverage, *insee_filter):
     test_result['POI mal paramétré'] = 0
     test_result['POI paramétré mais ko'] = 0
     test_result['POI ok'] = 0
+    test_result['non testé'] = 0
 
     detail_test_result =  []
     detail_test_result.append(["coverage", "env", "test_datetime", "object_id", "object_type", "test_category", "error", "infos", "error_level", "wkt"])
@@ -38,6 +39,13 @@ def test_all_bss_for_realtime_on_stands(environnement, coverage, *insee_filter):
     if appel_nav.status_code != 200 :
         logger.error (">> l'appel navitia a renvoyé une erreur : " + appel_nav_url)
         return
+
+    if appel_nav.json()['pagination']['total_result'] > 200 :
+        test_result['non testé'] += appel_nav.json()['pagination']['total_result'] - 900
+        message = "Il y a trop de POIs, ils n'ont pas tous été testés"
+        result = [coverage, environnement, datetime.date.today().strftime('%Y%m%d'), coverage, "coverage", "temps réel VLS", "évo du script à prévoir", message, "red", ""  ]
+        detail_test_result.append(result)
+        logger.error(message)
 
     pois = appel_nav.json()['pois']
     for a_poi in pois :

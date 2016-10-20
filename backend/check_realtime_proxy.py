@@ -102,14 +102,14 @@ def test_network_for_realtime_on_stop_schedule(environnement, coverage, *network
                             else:
                                 test_result['OK'] += 1
 
-        logger.info ("Résultat des tests pour le réseau {} : ".format(network))
-        logger.info (">> {} cas de tests".format(total_nb_tests))
-        logger.info (">> {} ligne(s) sans temps réel configuré".format(test_result['ligne non configurée']))
-        logger.info (">> {} cas de services terminés".format(test_result["pas horaires mais c'est normal"]))
-        logger.info (">> {} cas où du théorique est renvoyé".format(test_result['horaires théoriques']))
-        logger.info (">> {} cas où aucun horaire n'est renvoyé".format(test_result['pas horaires du tout']))
-        logger.info (">> {} cas où ça marche !".format(test_result['OK']))
-        logger.info (">> au moins {} cas non testés ".format(test_result['non testé']))
+    logger.info ("Résultat des tests :")
+    logger.info (">> {} cas de tests".format(total_nb_tests))
+    logger.info (">> {} ligne(s) sans temps réel configuré".format(test_result['ligne non configurée']))
+    logger.info (">> {} cas de services terminés".format(test_result["pas horaires mais c'est normal"]))
+    logger.info (">> {} cas où du théorique est renvoyé".format(test_result['horaires théoriques']))
+    logger.info (">> {} cas où aucun horaire n'est renvoyé".format(test_result['pas horaires du tout']))
+    logger.info (">> {} cas où ça marche !".format(test_result['OK']))
+    logger.info (">> au moins {} cas non testés ".format(test_result['non testé']))
 
     utils.write_errors_to_file (environnement, coverage, "check_realtime_proxy", detail_test_result)
     utils.generate_file_summary()

@@ -14,6 +14,9 @@ def compute_luminosity(a_color):
     blue = int(a_color[4:6], 16)
     return (red * 299 + green * 587 + blue * 114)/1000
 
+def is_valid_color(a_color):
+    return len(a_color) == 6 and a_color.isalnum()
+
 @clingon.clize
 def check_line_colors(environnement, coverage):
     """Lance la vérification de la présence des couleurs des lignes et du texte associé.
@@ -37,7 +40,9 @@ def check_line_colors(environnement, coverage):
         logger.error (">> l'appel navitia a renvoyé une erreur")
         return
     for a_network in appel_nav_networks.json()['networks'] :
-        appel_nav = requests.get(navitia_url + "coverage/{}/networks/{}/lines?count=1000".format(coverage, a_network['id']), headers={'Authorization': navitia_api_key})
+        appel_nav = requests.get(navitia_url + "coverage/{}/networks/{}/lines?count=1000&depth=0".format(coverage, a_network['id']), headers={'Authorization': navitia_api_key})
+        if appel_nav.json()['pagination']['total_result'] > 1000 :
+            logger.error (">> il y a trop de lignes sur le réseau {}, elles n'ont pas toutes été testées".format(a_network['name']))
         if "lines" in appel_nav.json():
             for a_line in appel_nav.json()['lines']:
                 color = a_line['color']
@@ -45,6 +50,10 @@ def check_line_colors(environnement, coverage):
                 if not color or not text_color:
                     message = "il n'y a pas de couleur ou de couleur de texte pour la ligne {} du réseau {}".format(a_line['name'], a_network['name'])
                     result = [coverage, environnement, datetime.date.today().strftime('%Y%m%d'), a_line['id'], "line", "couleurs des lignes", "config manquante", message, "red", utils.geojson_to_wkt(a_line['geojson'])]
+                    detail_test_result.append(result)
+                elif not is_valid_color(color) or not is_valid_color(text_color):
+                    message = "la couleur ou la couleur de texte pour la ligne {} du réseau {} est invalide".format(a_line['name'], a_network['name'])
+                    result = [coverage, environnement, datetime.date.today().strftime('%Y%m%d'), a_line['id'], "line", "couleurs des lignes", "config erronée", message, "red", utils.geojson_to_wkt(a_line['geojson'])]
                     detail_test_result.append(result)
                 else :
                     contrast = abs(compute_luminosity(text_color) - compute_luminosity(color))

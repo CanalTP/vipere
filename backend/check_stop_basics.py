@@ -135,7 +135,7 @@ def check_stops(environnement, coverage):
 
     detail_test_result.append(["coverage", "env", "test_datetime", "object_id", "object_type", "test_category", "error", "infos", "error_level", "wkt"])
 
-    load_naming_ref_files("../../data/audit/reference")
+    load_naming_ref_files("../../Data_scripts/data/audit/reference")
     #on fait les appels par réseau et par ligne pour faire des appels plus petits
     nav_response_network = requests.get(nav_url + "coverage/{}/networks?count=1000".format(coverage), headers={'Authorization': nav_key})
     if nav_response_network.status_code != 200 :

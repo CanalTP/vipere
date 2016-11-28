@@ -1,0 +1,3 @@
+[submodule "frontend/assets/wkt2geojson"]
+	path = frontend/assets/wkt2geojson
+	url = https://github.com/CanalTP/wkt2geojson/

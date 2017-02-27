@@ -98,15 +98,20 @@ def check_stops_of_a_line(params, env, coverage, stop_type, line_id):
     nav_response_stops = requests.get(nav_url + "coverage/{}/lines/{}/{}s/?count=1000".format(
         coverage, line_id, stop_type),
         headers={'Authorization': nav_key})
+    if nav_response_stops.json()["pagination"]['total_result'] > 1000 :
+        detail_test_result.append([coverage, environnement, datetime.date.today().strftime('%Y%m%d'),
+            line_id, "line", "check_stop_point_and_stop_area_name", "line_has_too_many_stops",
+            "la ligne {} a trop de {}, tout n'a pas été testés".format(line_id, stop_type)
+            , "red", ""])
     if (stop_type + "s") in nav_response_stops.json():
         for a_stop in nav_response_stops.json()[stop_type + "s"]:
             wkt= ""
-            if ("coord" in a_stop) or \
-                ((int(a_stop["coord"]["lat"]) == 0) and (int(a_stop["coord"]["lon"]) == 0)) :
+            if ("coord" not in a_stop) or \
+                ((float(a_stop["coord"]["lat"]) == 0.0) and (float(a_stop["coord"]["lon"]) == 0.0)) :
                     detail_test_result.append([coverage, env, datetime.date.today().strftime('%Y%m%d'),
-                        a_stop["id"], "stop_area", "check_stop_basics", "no_coordinates", '"' + a_stop["name"].replace('"', '""')+'"', "red",
+                        a_stop["id"], "stop_area", "check_stop_basics", "no_coordinates", a_stop['name'], "red",
                         wkt])
-                    #on teste également le nom de l'arrêt sans commune
+                    #on teste quand même le nom de l'arrêt sans commune
                     sns = stop_naming_status(a_stop["name"], "")
             else:
                 wkt = "POINT({} {})".format(a_stop["coord"]["lon"], a_stop["coord"]["lat"])
@@ -145,6 +150,11 @@ def check_stops(environnement, coverage):
         nav_response_line = requests.get(nav_url + "coverage/{}/networks/{}/lines/?count=1000".format(coverage, a_network["id"]),
             headers={'Authorization': nav_key})
         if "lines" in nav_response_line.json():
+            if nav_response_line.json()["pagination"]['total_result'] > 1000 :
+                detail_test_result.append([coverage, environnement, datetime.date.today().strftime('%Y%m%d'),
+                    a_network["id"], "network", "check_stop_point_and_stop_area_name", "network_has_too_many_line",
+                    "le réseau {} a trop de lignes, elles n'ont pas toutes été testées".format(a_network["name"])
+                    , "red", ""])
             for a_line in nav_response_line.json()["lines"]:
                 check_stops_of_a_line(params, environnement, coverage, "stop_area", a_line["id"])
                 check_stops_of_a_line(params, environnement, coverage, "stop_point", a_line["id"])

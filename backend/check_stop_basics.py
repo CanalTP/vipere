@@ -20,6 +20,14 @@ def is_cityname_in_stopname(stop_name, city_name):
     city_name = city_name.lower().replace("-", " ")
     return (city_name != "") and (city_name in stop_name)
 
+def is_roman_number(word):
+    word = word.replace('I','')
+    word = word.replace('V','')
+    word = word.replace('X','')
+    return (word == "")
+
+
+
 def stop_naming_status(stop_name, city_name):
     stop_name = stop_name.replace("'", ' ')
     stop_name = stop_name.replace("-", ' ')
@@ -35,40 +43,25 @@ def stop_naming_status(stop_name, city_name):
     if is_cityname_in_stopname(stop_name, city_name):
         return "city_in_name"
 
-    #ensuite, on vérifie mot à mot avec separateur espace
-    word_position = 0
-    for word in stop_name.split():
-        #1 - on passe les séparateurs
-        if word in ["/", "\\"]:
-            continue
-        #2 - on retire les parenthèse s'il y en a
-        if word[:1] == "(" and word[-1:] == ")":
-            word = word[1:-1]
+    #3 - on vérifie les majuscules
+    stop_name_words = stop_name.split(' ')
+    if stop_name_words[0] != stop_name_words[0].capitalize() :
+        return 'capitalizing_issue'
 
-        #3- On vérifie la casse
-        #si le mot est dans la liste des noms propres (avec la casse), il est bien écrit
-        if word in ref_nom_propres:
-            continue
-        word_position += 1
-        if word_position == 1:  # 1er mot : 1ere lettre en majuscule (hors nom propres déjà traités)
-            #if not word == word.capitalize():
-            m = re.match(r"^[A-Z0-9]([a-z0-9àéèêâîôïäö]*)", word)
-            if m and ((m.group()) != word):
-                return "first_word_problem"  # le mot n'est pas bien écrit
-        else:
-            #mot normal, il doit être en minuscule
-            #                if not word==word.lower():on ajoute une tolérence sur la majuscule
-            m = re.match(r"^[A-Z0-9]([a-z0-9àéèêâîôïäö]*)", word)
-            if m and (m.group() != word):
-                return "other_word_problem"
+    if len(stop_name_words) > 1 :
+        for a_word in stop_name_words[1:] :
+            if a_word in ref_nom_propres:
+                continue #si c'est un nom propre, on ne vérifie rien de plus
+            if a_word.isupper() and not is_roman_number(a_word) :
+                return 'uppercase_issue'
 
-        #4- on verifie les mots interdits
-        if word.lower() in ["aller", "retour"]:
-            return "forbidden_word"
+            #4- on verifie les mots interdits
+            if a_word.lower() in ["aller", "retour"]:
+                return "forbidden_word"
 
-        #5- on verifie les abréviations connues
-        if word.lower() in ["st", "ste", "bd", "bld", "cc", "av", "ave", "car"]:
-            return "shortenings"
+            #5- on verifie les abréviations connues
+            if a_word.lower() in ["st", "ste", "bd", "bld", "cc", "av", "ave", "car"]:
+                return "shortenings"
     #si tous les critères passent :
     return ""
 

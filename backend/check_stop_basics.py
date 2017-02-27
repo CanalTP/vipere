@@ -13,7 +13,6 @@ from clingon import clingon
 
 detail_test_result =  []
 ref_nom_propres = []
-ref_cities = []
 
 def is_cityname_in_stopname(stop_name, city_name):
     stop_name = stop_name.lower().strip()
@@ -25,8 +24,6 @@ def is_roman_number(word):
     word = word.replace('V','')
     word = word.replace('X','')
     return (word == "")
-
-
 
 def stop_naming_status(stop_name, city_name):
     stop_name = stop_name.replace("'", ' ')
@@ -50,10 +47,9 @@ def stop_naming_status(stop_name, city_name):
 
     if len(stop_name_words) > 1 :
         for a_word in stop_name_words[1:] :
-            if a_word in ref_nom_propres:
-                continue #si c'est un nom propre, on ne vérifie rien de plus
-            if a_word.isupper() and not is_roman_number(a_word) :
-                return 'uppercase_issue'
+            if a_word.isupper() :
+                if a_word not in ref_nom_propres and not is_roman_number(a_word) :
+                    return 'another_capitalizing_issue'
 
             #4- on verifie les mots interdits
             if a_word.lower() in ["aller", "retour"]:
@@ -66,22 +62,12 @@ def stop_naming_status(stop_name, city_name):
     return ""
 
 def load_naming_ref_files(ref_path):
-    INSEE_file_path = os.path.join(os.path.realpath(ref_path), "INSEE.csv")
+    global ref_nom_propres
     nompropre_file_path = os.path.join(os.path.realpath(ref_path), "nompropre.txt")
-    f = open(nompropre_file_path, encoding='utf8')
-    ref_nom_propres = []
-    for row in f.readlines():
-        ref_nom_propres.append(row.split(';'))
-    f.close()
-
-    f = open(INSEE_file_path, encoding='utf8')
-    ref_cities = []
-    for row in f.readlines():
-        r = row.split(';')
-        if r[0] == "insee_com": continue
-        r[10] = r[10][1:-1].replace('""', '"')
-        ref_cities.append(r)
-    f.close()
+    with open(nompropre_file_path, encoding='utf8') as f :
+        ref_nom_propres = []
+        for row in f.readlines():
+            ref_nom_propres.append(row.strip('\n'))
 
 def check_stops_of_a_line(params, env, coverage, stop_type, line_id):
     nav_url = params["environnements"][env]["url"]

@@ -117,7 +117,6 @@ def check_stops_of_a_line(params, env, coverage, stop_type, line_id):
                 wkt = "POINT({} {})".format(a_stop["coord"]["lon"], a_stop["coord"]["lat"])
                 for city in a_stop["administrative_regions"]:
                     sns = stop_naming_status(a_stop["name"], city["name"])
-                    if sns != "": break;
             if sns != "":
                 detail_test_result.append([coverage, env, datetime.date.today().strftime('%Y%m%d'),
                     a_stop["id"], stop_type, "check_stop_basics", sns,

@@ -27,8 +27,13 @@ def is_roman_number(word):
 
 def stop_naming_status(stop_name, city_name):
     stop_name = stop_name.replace("'", ' ')
+    stop_name = stop_name.replace(" - ", ' ')
     stop_name = stop_name.replace("-", ' ')
     stop_name = stop_name.replace(".", '')
+    stop_name = stop_name.replace(" / ", '')
+    stop_name = stop_name.replace("/", '')
+    stop_name = stop_name.replace("(", '')
+    stop_name = stop_name.replace(")", '')
     stop_name = stop_name.strip()
     # est-ce que l'arret a bien un libellé
     if len(stop_name) == 0:
@@ -58,6 +63,11 @@ def stop_naming_status(stop_name, city_name):
             #5- on verifie les abréviations connues
             if a_word.lower() in ["st", "ste", "bd", "bld", "cc", "av", "ave", "car"]:
                 return "shortenings"
+
+            #6- on verifie s'il n'y a pas de caractères étranges
+            if not a_word.isalnum():
+                return "unusual_characters_in_stop_name"
+
     #si tous les critères passent :
     return ""
 

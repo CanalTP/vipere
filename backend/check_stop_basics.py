@@ -13,17 +13,27 @@ from clingon import clingon
 
 detail_test_result =  []
 ref_nom_propres = []
-ref_cities = []
 
 def is_cityname_in_stopname(stop_name, city_name):
     stop_name = stop_name.lower().strip()
     city_name = city_name.lower().replace("-", " ")
     return (city_name != "") and (city_name in stop_name)
 
+def is_roman_number(word):
+    word = word.replace('I','')
+    word = word.replace('V','')
+    word = word.replace('X','')
+    return (word == "")
+
 def stop_naming_status(stop_name, city_name):
     stop_name = stop_name.replace("'", ' ')
+    stop_name = stop_name.replace(" - ", ' ')
     stop_name = stop_name.replace("-", ' ')
     stop_name = stop_name.replace(".", '')
+    stop_name = stop_name.replace(" / ", '')
+    stop_name = stop_name.replace("/", '')
+    stop_name = stop_name.replace("(", '')
+    stop_name = stop_name.replace(")", '')
     stop_name = stop_name.strip()
     # est-ce que l'arret a bien un libellé
     if len(stop_name) == 0:
@@ -35,60 +45,39 @@ def stop_naming_status(stop_name, city_name):
     if is_cityname_in_stopname(stop_name, city_name):
         return "city_in_name"
 
-    #ensuite, on vérifie mot à mot avec separateur espace
-    word_position = 0
-    for word in stop_name.split():
-        #1 - on passe les séparateurs
-        if word in ["/", "\\"]:
-            continue
-        #2 - on retire les parenthèse s'il y en a
-        if word[:1] == "(" and word[-1:] == ")":
-            word = word[1:-1]
+    #3 - on vérifie les majuscules
+    stop_name_words = stop_name.split(' ')
+    if stop_name_words[0] != stop_name_words[0].capitalize() :
+        return 'capitalizing_issue'
 
-        #3- On vérifie la casse
-        #si le mot est dans la liste des noms propres (avec la casse), il est bien écrit
-        if word in ref_nom_propres:
-            continue
-        word_position += 1
-        if word_position == 1:  # 1er mot : 1ere lettre en majuscule (hors nom propres déjà traités)
-            #if not word == word.capitalize():
-            m = re.match(r"^[A-Z0-9]([a-z0-9àéèêâîôïäö]*)", word)
-            if m and ((m.group()) != word):
-                return "first_word_problem"  # le mot n'est pas bien écrit
-        else:
-            #mot normal, il doit être en minuscule
-            #                if not word==word.lower():on ajoute une tolérence sur la majuscule
-            m = re.match(r"^[A-Z0-9]([a-z0-9àéèêâîôïäö]*)", word)
-            if m and (m.group() != word):
-                return "other_word_problem"
+    if len(stop_name_words) > 1 :
+        for a_word in stop_name_words[1:] :
+            if a_word.isupper() :
+                if a_word not in ref_nom_propres and not is_roman_number(a_word) :
+                    return 'another_capitalizing_issue'
 
-        #4- on verifie les mots interdits
-        if word.lower() in ["aller", "retour"]:
-            return "forbidden_word"
+            #4- on verifie les mots interdits
+            if a_word.lower() in ["aller", "retour"]:
+                return "forbidden_word"
 
-        #5- on verifie les abréviations connues
-        if word.lower() in ["st", "ste", "bd", "bld", "cc", "av", "ave", "car"]:
-            return "shortenings"
+            #5- on verifie les abréviations connues
+            if a_word.lower() in ["st", "ste", "bd", "bld", "cc", "av", "ave", "car"]:
+                return "shortenings"
+
+            #6- on verifie s'il n'y a pas de caractères étranges
+            if not a_word.isalnum():
+                return "unusual_characters_in_stop_name"
+
     #si tous les critères passent :
     return ""
 
 def load_naming_ref_files(ref_path):
-    INSEE_file_path = os.path.join(os.path.realpath(ref_path), "INSEE.csv")
+    global ref_nom_propres
     nompropre_file_path = os.path.join(os.path.realpath(ref_path), "nompropre.txt")
-    f = open(nompropre_file_path, encoding='utf8')
-    ref_nom_propres = []
-    for row in f.readlines():
-        ref_nom_propres.append(row.split(';'))
-    f.close()
-
-    f = open(INSEE_file_path, encoding='utf8')
-    ref_cities = []
-    for row in f.readlines():
-        r = row.split(';')
-        if r[0] == "insee_com": continue
-        r[10] = r[10][1:-1].replace('""', '"')
-        ref_cities.append(r)
-    f.close()
+    with open(nompropre_file_path, encoding='utf8') as f :
+        ref_nom_propres = []
+        for row in f.readlines():
+            ref_nom_propres.append(row.strip('\n'))
 
 def check_stops_of_a_line(params, env, coverage, stop_type, line_id):
     nav_url = params["environnements"][env]["url"]
@@ -98,21 +87,25 @@ def check_stops_of_a_line(params, env, coverage, stop_type, line_id):
     nav_response_stops = requests.get(nav_url + "coverage/{}/lines/{}/{}s/?count=1000".format(
         coverage, line_id, stop_type),
         headers={'Authorization': nav_key})
+    if nav_response_stops.json()["pagination"]['total_result'] > 1000 :
+        detail_test_result.append([coverage, environnement, datetime.date.today().strftime('%Y%m%d'),
+            line_id, "line", "check_stop_point_and_stop_area_name", "line_has_too_many_stops",
+            "la ligne {} a trop de {}, tout n'a pas été testés".format(line_id, stop_type)
+            , "red", ""])
     if (stop_type + "s") in nav_response_stops.json():
         for a_stop in nav_response_stops.json()[stop_type + "s"]:
             wkt= ""
-            if ("coord" in a_stop) or \
-                ((int(a_stop["coord"]["lat"]) == 0) and (int(a_stop["coord"]["lon"]) == 0)) :
+            if ("coord" not in a_stop) or \
+                ((float(a_stop["coord"]["lat"]) == 0.0) and (float(a_stop["coord"]["lon"]) == 0.0)) :
                     detail_test_result.append([coverage, env, datetime.date.today().strftime('%Y%m%d'),
-                        a_stop["id"], "stop_area", "check_stop_basics", "no_coordinates", '"' + a_stop["name"].replace('"', '""')+'"', "red",
+                        a_stop["id"], "stop_area", "check_stop_basics", "no_coordinates", a_stop['name'], "red",
                         wkt])
-                    #on teste également le nom de l'arrêt sans commune
+                    #on teste quand même le nom de l'arrêt sans commune
                     sns = stop_naming_status(a_stop["name"], "")
             else:
                 wkt = "POINT({} {})".format(a_stop["coord"]["lon"], a_stop["coord"]["lat"])
                 for city in a_stop["administrative_regions"]:
                     sns = stop_naming_status(a_stop["name"], city["name"])
-                    if sns != "": break;
             if sns != "":
                 detail_test_result.append([coverage, env, datetime.date.today().strftime('%Y%m%d'),
                     a_stop["id"], stop_type, "check_stop_basics", sns,
@@ -145,6 +138,11 @@ def check_stops(environnement, coverage):
         nav_response_line = requests.get(nav_url + "coverage/{}/networks/{}/lines/?count=1000".format(coverage, a_network["id"]),
             headers={'Authorization': nav_key})
         if "lines" in nav_response_line.json():
+            if nav_response_line.json()["pagination"]['total_result'] > 1000 :
+                detail_test_result.append([coverage, environnement, datetime.date.today().strftime('%Y%m%d'),
+                    a_network["id"], "network", "check_stop_point_and_stop_area_name", "network_has_too_many_line",
+                    "le réseau {} a trop de lignes, elles n'ont pas toutes été testées".format(a_network["name"])
+                    , "red", ""])
             for a_line in nav_response_line.json()["lines"]:
                 check_stops_of_a_line(params, environnement, coverage, "stop_area", a_line["id"])
                 check_stops_of_a_line(params, environnement, coverage, "stop_point", a_line["id"])
